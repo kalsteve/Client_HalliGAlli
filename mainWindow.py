@@ -1,15 +1,16 @@
-
 from firstWindow import FirstWindow
 from secondWindow import SecondWindow
 from PyQt5.QtWidgets import QApplication
+from socket import *
+import socket
 import sys
-
 
 class MyDisplay:
     def __init__(self):
-        self.first_window = FirstWindow()
-        self.window = SecondWindow()
-        self.window.close()
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.first_window = FirstWindow(self.client_socket)
+        self.window = SecondWindow(self.client_socket)
+        self.window.hide()
 
     def show_window1(self):
         self.first_window.switch_window.connect(self.show_window2)
