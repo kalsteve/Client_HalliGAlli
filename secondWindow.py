@@ -1,9 +1,13 @@
 from PyQt5.QtGui import QIcon, QPixmap, QCursor
 from PyQt5.QtWidgets import *
-from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-#from client_receive import cards
+import json
+import threading
+import time
+from socket import *
 import socket
+import sys
+
 
 def styleButton(button):
     button.setCursor(Qt.PointingHandCursor)
@@ -21,8 +25,13 @@ def styleButton(button):
         """
     )
 class SecondWindow(QWidget):
-    def __init__(self):
+    def __init__(self, client_socket):
         super().__init__()
+        self.client_socket = client_socket
+
+
+
+
         self.player_cards = ['banana1', 'orange1', 'strawberry1', 'abocado1'] #예시임. 서버에서 값 받아와야함
         self.current_index = 0
 
@@ -72,22 +81,19 @@ class SecondWindow(QWidget):
 
         self.setLayout(imageLayout)
 
-        '''
-        # 서버와의 연결 설정
-        self.server = ('localhost', 12345)  # 서버의 주소와 포트
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(self.server)
-        '''
-    def bell(self): # 종 울리기 함수
+    def bell(self,client_socket): # 종 울리기 함수
+        data = json.dumps({'Action': 'Bell'})
+        self.client_socket.sendall(data.encode())
         print('bell')
-        #self.sock.sendall(True)
 
-    def open_card(self): #카드 넘기는 함수
+
+    def open_card(self,client_socket): #카드 넘기는 함수
         self.current_index = (self.current_index + 1) % len(self.player_cards)
         self.pixmap = QPixmap('images/' + self.player_cards[self.current_index] + '.jpg')
         self.my_openedcard.setPixmap(self.pixmap)
-        message = self.player_cards
-        print(message)
-        #self.sock.sendall(message.encode()) #서버에 전달
+        data = json.dumps({'Action': 'Draw'})
+        self.client_socket.sendall(data.encode())
 
-
+    def closeEvent(self, event): #창 종료시 소켓 종료
+        self.client_socket.close()
+        event.accept()
