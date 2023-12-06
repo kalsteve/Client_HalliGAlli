@@ -9,7 +9,8 @@ class DataConverter:
             self.data = decoded_data
         elif isinstance(data, bytes):
             try:
-                encoded_data = data.decode(form).split('\0')[0]
+                index = data.decode("utf-8").find('\0')
+                encoded_data = data.decode(form)[:index]
                 self.data = json.loads(encoded_data)
             except UnicodeDecodeError:
                 print('UnicodeDecodeError')
