@@ -2,7 +2,7 @@ import json
 import socket
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('172.23.202.241', 4892))
+client_socket.connect(('172.19.215.16', 4892))
 print("Connected to server")
 
 while True:
