@@ -44,7 +44,7 @@ class DataConverter:
         self.__convert_to_dict(data)
         self.__store_data()
 
-    def send(self, data: str):
+    def send(self, data: str) -> bytes:
         action_value = DataConverter.player_action.get(data)
         if action_value is None:
             print(f"Error: '{data}' is not a valid action.")
@@ -54,6 +54,8 @@ class DataConverter:
         send_data = json.dumps({"player_id": self.my_id, 'player_action': self.my_action})
 
         self.__convert_to_bytes(send_data)
+
+        return self.stored_bytes
 
     def __str__(self):
         return json.dumps(self.stored_dict)
