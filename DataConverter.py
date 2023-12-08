@@ -3,13 +3,13 @@ import json
 
 # 데이터 변환 클래스
 class DataConverter:
-    fruits = {
+    fruits: dict[str, int] = {
         "STRAWBERRY": 0,
         "BANANA": 1,
         "LIME": 2,
         "PLUM": 3
     }
-    player_action = {
+    player_action: dict[str, int] = {
         "PLAYER_NULL": 0,
         "PLAYER_INIT": 1,
         "PLAYER_READY": 2,
@@ -26,40 +26,64 @@ class DataConverter:
     }
 
     def __init__(self, data, form='utf-8'):
+        self.stored_dict: dict
+        self.stored_bytes: bytes
+        self.my_id: int
+        self.my_action: int = 0
+        self.player_turn: int
+        self.card: dict = {}
+
         if isinstance(data, str):
-            self.stored_str = data
+            self.__convert_to_bytes(data)
+
         elif isinstance(data, bytes):
-            self.stored_bytes = data
+            self.__convert_to_dict(data)
+            self.__store_first_data()
 
-    def get_str(self):
-        return self.store_str
+    def recv(self, data: bytes):
+        self.__convert_to_dict(data)
+        self.__store_data()
 
-    def get_bytes(self):
+    def send(self, data: str):
+        action_value = DataConverter.player_action.get(data)
+        if action_value is None:
+            print(f"Error: '{data}' is not a valid action.")
+        else:
+            self.my_action = int(action_value)
+
+        send_data = json.dumps({"player_id": self.my_id, 'player_action': self.my_action})
+
+        self.__convert_to_bytes(send_data)
+
+    def __str__(self):
+        return json.dumps(self.stored_dict)
+
+    def __bytes__(self):
         return self.stored_bytes
 
-    def __convert_to_str(self, data):
+    def __convert_to_dict(self, data: bytes):
         index = data.decode("utf-8").find('\0')
-        self.store_str = data.decode('utf-8')[:index]
+        self.stored_dict = json.loads(data.decode('utf-8')[:index])
 
-    def __convert_to_bytes(self, data):
+    def __convert_to_bytes(self, data: str):
         self.stored_bytes = int.from_bytes(data.encode('utf-8'), 'little').to_bytes(1024, 'little')
 
-    def __store_first_data(self, data):
-        self.my_id = data["player_id"]
-        self.my_action = data["player_action"]
+    def __store_first_data(self):
+        self.my_id = self.stored_dict.get("player_id")
+        self.player_turn = self.stored_dict.get("player_turn")
+        self.my_action = self.stored_dict.get("player_action")
 
-    def __store_data(self, data):
+    def __store_data(self):
+        self.player_turn = self.stored_dict.get("player_turn")
+        try:
+            self.my_action = self.stored_dict.get("player_action")
+        except None:
+            for player in self.stored_dict.get("players_data"):
+                if player.get("player_id") == self.my_id:
+                    # 카드 저장
+                    self.card = {
+                        'card_volume': player["cardDeckOnTable_volume"],
+                        'card_type': self.fruits[player["cardDeckOnTable_type"]]
+                    }
 
-       player_list = data.gey("players", 'Unknown')
 
-       if player_list == 'Unknown':
-           print('Unknown player list')
-
-       for player in player_list:
-            if player["player_id"] == self.my_id:
-                # 카드 저장
-                self.card = {'card_volume': player["cardDeckOnTable_volume"]}
-                type = player["cardDeckOnTable_type"]
-                self.card['card_type'] = self.fruits[type]
-            else:
-                player_list.append({'player_id': player["player_id"], 'player_action': player["player_action"]})
