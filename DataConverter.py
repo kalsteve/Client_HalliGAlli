@@ -31,7 +31,7 @@ class DataConverter:
         self.my_id: int
         self.my_action: int = 0
         self.player_turn: int
-        self.card: dict = {}
+        self.card: dict = {'type': [], 'volume': []}
 
         if isinstance(data, str):
             self.__convert_to_bytes(data)
@@ -84,8 +84,18 @@ class DataConverter:
                 if player.get("player_id") == self.my_id:
                     # 카드 저장
                     self.card = {
-                        'card_volume': player["cardDeckOnTable_volume"],
-                        'card_type': self.fruits[player["cardDeckOnTable_type"]]
+                        'type': self.fruits[player["cardDeckOnTable_type"]],
+                        'volume': player["cardDeckOnTable_volume"]
                     }
 
+    def get_id(self) -> int:
+        return self.my_id
 
+    def get_action(self) -> str:
+        return {value: key for key, value in self.player_action.items()}[self.my_action]
+
+    def get_turn(self) -> int:
+        return self.player_turn
+
+    def get_card(self) -> dict:
+        return self.card
