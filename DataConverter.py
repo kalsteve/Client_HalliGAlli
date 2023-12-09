@@ -139,3 +139,7 @@ class DataConverter:
         for player in self.player_list:
             if player.get('player_id') == player_id:
                 return player
+
+    # 플레이어의 데이터를 가져옴
+    def get_player_list(self) -> list:
+        return self.player_list
