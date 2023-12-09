@@ -55,10 +55,10 @@ class DataConverter:
     # 데이터 송신
     def send(self, data: str) -> bytes:
         action_value = DataConverter.player_action.get(data)
+        self.my_action = action_value
         # 보내는 데이터
         send_data = str({"player_id": self.my_id, 'player_action': self.my_action})
         self.__convert_to_bytes(send_data)
-
         # 플레이어 액션에 따라 데이터 변환
         return self.stored_bytes
 
@@ -89,16 +89,18 @@ class DataConverter:
     def __store_data(self):
         self.player_turn = self.stored_dict.get("player_turn")
         # 플레이어의 액션을 받았을 때
-        try:
+        if(self.stored_dict.get("player_action") is not None):
             self.my_action = self.stored_dict.get("player_action")
         # 플레이어의 카드를 받았을 때, 액션이 없는 경우 데이터를 수신한다고 생각하고 저장된다.
-        except None:
+        else:
+            self.player_list = []
             for player in self.stored_dict.get("all_players_data"):
                 # 플레이어의 데이터 전체 저장
                 self.player_list.append({
                     'player_id': player["player_id"],
                     'card': {
-                        'type': self.fruits[player["cardDeckOnTable_type"]],
+                        # 과일 종류를 숫자에서 문자로 저장
+                        'type': {value: key for key, value in self.fruits.items()}[player["cardDeckOnTable_type"]],
                         'volume': player["cardDeckOnTable_volume"]
                     }
                 })
@@ -106,7 +108,7 @@ class DataConverter:
                 if player.get("player_id") == self.my_id:
                     # 카드 저장
                     self.card = {
-                        'type': self.fruits[player["cardDeckOnTable_type"]],
+                        'type': {value: key for key, value in self.fruits.items()}[player["cardDeckOnTable_type"]],
                         'volume': player["cardDeckOnTable_volume"]
                     }
 
@@ -127,9 +129,9 @@ class DataConverter:
         return self.card
 
     # 플레이어의 아이디로 플레이어의 카드를 가져옴
-    def get_card_by_id(self) -> dict:
+    def get_card_by_id(self, id) -> dict:
         for player in self.player_list:
-            if player.get('player_id') == self.my_id:
+            if player.get('player_id') == id:
                 return player.get('card')
 
     # 플레이어의 아이디로 플레이어의 데이터를 가져옴

@@ -27,6 +27,10 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(data.player_turn, 2)
 
+        self.assertEqual(data.get_player_by_id(1), {'player_id': 1, 'card': {'type': 'PLUM', 'volume': 2}})
+
+        self.assertEqual(data.get_card_by_id(1), data.get_card_my())
+
 
 
         # self.assertEqual(bytes(data), bytes(int.from_bytes(self.receive_action_test(), 'little').to_bytes(1024, 'little')))
