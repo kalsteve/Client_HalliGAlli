@@ -4,13 +4,13 @@ import threading
 
 from DataConverter import DataConverter
 
-
+buffer_size = 1024
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('172.23.202.241', 4892))
+client_socket.connect(('kiwiwip.duckdns.org', 4848))
 print("Connected to server")
 
-data = DataConverter(client_socket.recv(1024, socket.MSG_WAITALL))
+data = DataConverter(client_socket.recv(buffer_size, socket.MSG_WAITALL))
 print(data)
 
 # 서버에 메시지를 전송
@@ -20,14 +20,14 @@ data.send({value: key for key, value in DataConverter.player_action.items()}[sen
 print(bytes(data))
 client_socket.sendall(bytes(data))
 
-data.recv(client_socket.recv(1024, socket.MSG_WAITALL))
+data.recv(client_socket.recv(buffer_size, socket.MSG_WAITALL))
 
 while True:
 
     if data.my_action == data.player_action["PLAYER_GAMING"]:
         lock = threading.Lock()
         # 정보를 받아오는 쓰레드 생성
-        thread = threading.Thread(target=lambda : data.recv(client_socket.recv(1024)))
+        thread = threading.Thread(target=lambda : data.recv(client_socket.recv(buffer_size)))
         data.recv(client_socket.recv(1024, socket.MSG_WAITALL))
 
         print("player_gaming")
@@ -45,7 +45,7 @@ while True:
         continue
 
     if data.my_action == data.player_action["PLAYER_TURN"]:
-        data.recv(client_socket.recv(1024, socket.MSG_WAITALL))
+        data.recv(client_socket.recv(buffer_size, socket.MSG_WAITALL))
 
         print("player_turn")
 
