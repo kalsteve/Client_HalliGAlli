@@ -24,7 +24,6 @@ data.recv(client_socket.recv(1024, socket.MSG_WAITALL))
 
 while True:
 
-
     if data.my_action == data.player_action["PLAYER_GAMING"]:
         lock = threading.Lock()
         # 정보를 받아오는 쓰레드 생성
@@ -36,7 +35,6 @@ while True:
         sendMessage = int(input("send-> "))
         if sendMessage == "exit":
             break
-
 
         bytesString = data.send({value: key for key, value in DataConverter.player_action.items()}[sendMessage])
         lock.acquire()
@@ -60,8 +58,6 @@ while True:
 
         # 카드 정보를 받아옴
         continue
-
-
 
 client_socket.close()
 
