@@ -55,10 +55,10 @@ class DataConverter:
     # 데이터 송신
     def send(self, data: str) -> bytes:
         action_value = DataConverter.player_action.get(data)
-        self.my_action = action_value
         # 보내는 데이터
-        send_data = str({"player_id": self.my_id, 'player_action': self.my_action})
-        self.__convert_to_bytes(send_data)
+        send_data = {"player_id": self.my_id, 'player_action': action_value}
+
+        self.__convert_to_bytes(json.dumps(send_data))
         # 플레이어 액션에 따라 데이터 변환
         return self.stored_bytes
 

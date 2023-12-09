@@ -4,10 +4,10 @@ import threading
 
 from DataConverter import DataConverter
 
-buffer_size = 1024
+buffer_size = 256
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('kiwiwip.duckdns.org', 4848))
+client_socket.connect(('220.149.128.100', 4101))
 print("Connected to server")
 
 data = DataConverter(client_socket.recv(buffer_size, socket.MSG_WAITALL))
@@ -15,12 +15,12 @@ print(data)
 
 # 서버에 메시지를 전송
 sendMessage = int(input("send-> "))
-
 data.send({value: key for key, value in DataConverter.player_action.items()}[sendMessage])
 print(bytes(data))
 client_socket.sendall(bytes(data))
 
 data.recv(client_socket.recv(buffer_size, socket.MSG_WAITALL))
+print("\n", data)
 
 while True:
 
@@ -45,16 +45,17 @@ while True:
         continue
 
     if data.my_action == data.player_action["PLAYER_TURN"]:
+        # 서버에 메시지를 전송
+        sendMessage = int(input("send-> "))
+        data.send({value: key for key, value in DataConverter.player_action.items()}[sendMessage])
+        print(bytes(data))
+
+        client_socket.sendall(bytes(data))
+
         data.recv(client_socket.recv(buffer_size, socket.MSG_WAITALL))
+        print("\n", data)
 
         print("player_turn")
-
-        sendMessage = int(input("send-> "))
-        if sendMessage == "exit":
-            break
-
-        data.send({value: key for key, value in DataConverter.player_action.items()}[sendMessage])
-        client_socket.sendall(bytes(data))
 
         # 카드 정보를 받아옴
         continue
