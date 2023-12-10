@@ -10,6 +10,12 @@ class DataConverter:
         "LIME": 2,
         "PLUM": 3
     }
+    con_fruits: dict[int, str] = {
+        "STRAWBERRY": 0,
+        "BANANA": 1,
+        "ABOCADO": 2,
+        "ORANGE": 3
+    }
     # 플레이어 액션 딕셔너리
     player_action: dict[str, int] = {
         "PLAYER_NULL": 0,

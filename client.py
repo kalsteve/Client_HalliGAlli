@@ -92,8 +92,8 @@ class HarigariClient(QMainWindow):
             line.setStyleSheet("background-color: red;")
 
         # Create back_image labels for each player with some spacing
-        back_image_labels = [QLabel(self) for _ in range(4)]
-        for label in back_image_labels:
+        self.image_labels = [QLabel(self) for _ in range(4)]
+        for label in self.image_labels:
             label.setPixmap(QPixmap('images/back.png'))
 
         # Create labels for images
@@ -114,6 +114,12 @@ class HarigariClient(QMainWindow):
         self.bell_button.setStyleSheet("background-color: white;")
         self.draw_card_button.setEnabled(False)
 
+        # Create Turn end button
+        self.turn_end_button = QPushButton('Turn End', self)
+        self.turn_end_button.clicked.connect(self.handleTurnEnd)
+        self.turn_end_button.setStyleSheet("background-color: white;")
+        self.turn_end_button.setEnabled(False)
+
         # Create label for current player's turn
         self.turn_label = QLabel(self)
         self.turn_label.setAlignment(Qt.AlignCenter)
@@ -124,8 +130,12 @@ class HarigariClient(QMainWindow):
         layout.addWidget(self.turn_label, 0, 0, 1, 4)  # Row 0, Column 0, Span 1 row, 4 columns
         layout.addWidget(bell_image_label, 1, 0, 1, 4)  # Row 1, Column 0, Span 1 row, 4 columns
         layout.addWidget(separator_lines[0], 2, 0, 1, 4)  # Row 2, Column 0, Span 1 row, 4 columns
-        layout.addWidget(self.draw_card_button, 3, 0, 1, 2)  # Row 3, Column 0, Span 1 row, 2 columns
-        layout.addWidget(self.bell_button, 1, 0, 1, 3)  # Row 3, Column 2, Span 1 row, 2 columns
+        # Add bell button
+        layout.addWidget(self.bell_button, 6, 0, 1, 1)  # Row 6, Column 0, Span 1 row, 2 columns
+        # Add draw card button
+        layout.addWidget(self.draw_card_button, 6, 1, 1, 1)  # Row 6, Column 2, Span 1 row, 2 columns
+        # Add turn end button
+        layout.addWidget(self.turn_end_button, 6, 2, 1, 1)  # Row 6, Column 2, Span 1 row, 2 columns
 
         # Add labels for each player with some spacing
         player_labels = [QLabel(f'   Player {i + 1}') for i in range(4)]
@@ -137,14 +147,8 @@ class HarigariClient(QMainWindow):
             layout.addWidget(line, 2, i, 5, 1)  # Row 2, Column i, Span 5 rows, 1 column
 
         # Add back_image labels for each player in the same row as my_back_image
-        for i, label in enumerate(back_image_labels):
+        for i, label in enumerate(self.image_labels):
             layout.addWidget(label, 4, i, 1, 1)  # Row 4, Column i, Span 1 row, 1 column
-
-        # Add bell button
-        layout.addWidget(self.bell_button, 6, 0, 1, 2)  # Row 6, Column 0, Span 1 row, 2 columns
-
-        # Add draw card button
-        layout.addWidget(self.bell_button, 6, 2, 1, 2)  # Row 6, Column 2, Span 1 row, 2 columns
 
         self.bell_button.setEnabled(True)
 
@@ -163,12 +167,12 @@ class HarigariClient(QMainWindow):
         data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
         print("Received action from server:", data)
 
-
-
         # 카드를 뽑는 액션, 객체를 받아서 서버에 전송
 
     # 카드를 뽑았을때
     def handleDrawCard(self):
+        self.bell_button.setEnabled(False)
+        self.turn_end_button.setEnabled(True)
         self.game_thread.update_event(clicked_draw_button=True)
         print("Draw card pressed!")
 
@@ -196,12 +200,21 @@ class HarigariClient(QMainWindow):
         self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
         print("Received action from server:", self.data)
 
+    def handleTurnEnd(self):
+        self.turn_end_button.setEnabled(False)
+        print("Turn end pressed!")
+
+    def handleOffButton(self):
+        self.turn_end_button.setEnabled(False)
+
     # 게임 화면을 보여줌
     def showGameScreen(self):
         self.game_thread = InGameThread(parent=self, client_socket=self.clientSocket, data=self.data)
         self.game_thread.cardUpdateSignal.connect(self.receive_data)
         self.game_thread.myTurnSignal.connect(self.handleMyTurn)
         self.game_thread.notMyTurnSignal.connect(self.handleNotMyTurn)
+        self.game_thread.TurnEndSignal.connect(self.handleTurnEnd)
+        self.game_thread.offBellButtonSignal.connect(self.handleOffButton)
         self.game_thread.start()
 
 
@@ -239,23 +252,27 @@ class HarigariClient(QMainWindow):
         current_player = data.get_turn()
         player_list = data.get_player_list()
 
+        file_list = set()
         # 카드 정보가 있으면
-        for player, card_label in player_list, self.card_labels:
-            path = f'images/{player["card"]["type"].lower()}{player_list["card"]["volume"]}.jpg'
-            print(path)
-            card_image_path = f'images/{path}'
-            card_label.setPixmap(QPixmap(card_image_path))
+        for player, card_label in zip(player_list, self.card_labels):
+            card_type_key = DataConverter.fruits[player["card"]["type"]]
+            card_type = {value: key for key, value in DataConverter.con_fruits.items()}[card_type_key].lower()
+            card_volume = player["card"]["volume"] + 1
+            card_image_path = f'images/{card_type}{card_volume}.jpg'
+            print(card_image_path)
+            file_list.add(card_image_path)
 
-            # 화면 상단에 현재 플레이어 누군지 표시
-            self.turn_label.setText(f"Current Turn: {current_player}")
+        # back_image_labels 레이블에 이미지 설정
+        for label, image_path in zip(self.image_labels, file_list):
+            label.setPixmap(QPixmap(image_path))
 
-        self.data = data
+        # 화면 상단에 현재 플레이어 누군지 표시
+        self.turn_label.setText(f"Current Turn: {current_player}")
+
+
 
     def handlePlayerWaiting(self):
-        wait_qthread = QThread()
-        wait_qthread.run = lambda: self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
-        wait_qthread.start()
-
+        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
         while True:
             if wait_qthread.isFinished():
                 if self.data.get_action() == self.data.player_action["PLAYER_GAMING"]:
@@ -322,6 +339,8 @@ class InGameThread(QThread):
     cardUpdateSignal = pyqtSignal(DataConverter)
     myTurnSignal = pyqtSignal()
     notMyTurnSignal = pyqtSignal()
+    TurnEndSignal = pyqtSignal()
+    offBellButtonSignal = pyqtSignal()
 
     def __init__(self, parent=None, client_socket=None, data=None):
         super(InGameThread, self).__init__(parent)
@@ -329,11 +348,12 @@ class InGameThread(QThread):
         self.data: DataConverter = DataConverter(data)
         self.clicked_draw_button: bool = False
         self.clicked_bell_button: bool = False
+        self.clicked_turn_end_button: bool = False
 
-    def update_event(self, clicked_draw_button=False, clicked_bell_button=False):
+    def update_event(self, clicked_draw_button=False, clicked_bell_button=False, clicked_turn_end_button=False):
         self.clicked_draw_button = clicked_draw_button
         self.clicked_bell_button = clicked_bell_button
-
+        self.clicked_turn_end_button = clicked_turn_end_button
 
     def run(self):
         self.clientSocket.sendall(self.data.send("PLAYER_START"))
@@ -348,8 +368,10 @@ class InGameThread(QThread):
                 self.clientSocket.sendall(bytes(self.data))
                 print("send data from server: ", bytes(self.data))
                 self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+                self.cardUpdateSignal.emit(self.data)
                 print("Received action from server:", self.data)
                 self.clicked_bell_button = False
+                self.offBellButtonSignal.emit()
 
 
             # 플레이어의 턴인 상태면
@@ -357,12 +379,19 @@ class InGameThread(QThread):
                 self.myTurnSignal.emit()
                 # 데이터의 업데이트를 대기
                 if self.clicked_draw_button:
-                    self.data.set_action("PLAYER_DRAW")
-                    self.clientSocket.sendall(bytes(self.data))
+                    self.clientSocket.sendall(bytes(self.data.send("PLAYER_DRAW")))
                     print("send data from server: ", bytes(self.data))
                     self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
                     print("Received action from server:", self.data)
+                    self.cardUpdateSignal.emit(self.data)
                     self.clicked_draw_button = False
+
+                if self.clicked_turn_end_button:
+                    self.clientSocket.sendall(bytes(self.data.send("PLAYER_TURN_END")))
+                    print("send data from server: ", bytes(self.data))
+                    self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+                    print("Received action from server:", self.data)
+                    self.clicked_turn_end_button = False
 
             # 플레이어가 인게임 상태면
             if self.data.my_action == self.data.player_action["PLAYER_GAMING"]:
@@ -370,16 +399,7 @@ class InGameThread(QThread):
                 print("Received action from server:", self.data)
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
-
-
-            QThread.sleep(1000)
-
-
-
-
-
-
-
+            QThread.sleep(1)
 
 if __name__ == '__main__':
     app = QApplication([])
