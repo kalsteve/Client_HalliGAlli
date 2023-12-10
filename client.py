@@ -15,14 +15,13 @@ from DataConverter import DataConverter
     2. 서버에서 보내는 데이터를 받을 때 코드 수정해야함. -> receive_data 함수
     3. 서버에 데이터 보낼때 보내는 형식 아마 수정해야할거임 -> send 함수 찾아서.
     4. '''
-
+buffer_size = 128
 
 class HarigariClient(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.initMainMenu()
-
         # 통신 설정
         self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientSocket.connect(('kiwiwip.duckdns.org', 4848))
@@ -159,12 +158,12 @@ class HarigariClient(QMainWindow):
     # 서버에 신호를 보냄
     def first_receive(self, client_socket: socket.socket):
         print("Signal sent to server")
-        data = DataConverter(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        data = DataConverter(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
         print("Received data from server: ", data)
         return data
 
     def receive_action(self, data: DataConverter):
-        data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
         print("Received action from server:", data)
 
         # 카드를 뽑는 액션, 객체를 받아서 서버에 전송
@@ -197,7 +196,7 @@ class HarigariClient(QMainWindow):
         self.data.set_action(action)
         self.clientSocket.sendall(bytes(self.data))
         print("set action: ", self.data.get_action())
-        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
         print("Received action from server:", self.data)
 
     def handleTurnEnd(self):
@@ -354,7 +353,7 @@ class InGameThread(QThread):
     def run(self):
         self.clientSocket.sendall(self.data.send("PLAYER_START"))
         print("init send data from server: ", bytes(self.data))
-        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
         print("init Received action from server:", self.data)
 
         while True:
@@ -363,7 +362,7 @@ class InGameThread(QThread):
                 self.data.set_action("PLAYER_BELL")
                 self.clientSocket.sendall(bytes(self.data))
                 print("send data from server: ", bytes(self.data))
-                self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+                self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                 self.cardUpdateSignal.emit(self.data)
                 print("Received action from server:", self.data)
                 self.clicked_bell_button = False
@@ -377,7 +376,7 @@ class InGameThread(QThread):
                 if self.clicked_draw_button:
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_DRAW")))
                     print("send data from server: ", bytes(self.data))
-                    self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+                    self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                     print("Received action from server:", self.data)
                     self.cardUpdateSignal.emit(self.data)
                     self.clicked_draw_button = False
@@ -385,13 +384,13 @@ class InGameThread(QThread):
                 if self.clicked_turn_end_button:
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_TURN_END")))
                     print("send data from server: ", bytes(self.data))
-                    self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+                    self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                     print("Received action from server:", self.data)
                     self.clicked_turn_end_button = False
 
             # 플레이어가 인게임 상태면
             if self.data.my_action == self.data.player_action["PLAYER_GAMING"]:
-                self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+                self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                 print("Received action from server:", self.data)
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
@@ -404,7 +403,7 @@ class waitThread(QThread):
         self.data: DataConverter = DataConverter(data)
 
     def run(self):
-        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
 
 if __name__ == '__main__':
     app = QApplication([])
