@@ -143,3 +143,10 @@ class DataConverter:
     # 플레이어의 데이터를 가져옴
     def get_player_list(self) -> list:
         return self.player_list
+
+    def set_action(self, action: int):
+        self.my_action = action
+        # 보내는 데이터
+        send_data = {"player_id": self.my_id, 'player_action': self.my_action}
+        self.__convert_to_bytes(json.dumps(send_data))
+
