@@ -101,7 +101,6 @@ class HarigariClient(QMainWindow):
         self.bell_button.clicked.connect(self.handleBellPress)
         # 벨의 이미지를 버튼으로 사용하고 크기는 이미지에 맞게 변경
         self.bell_button.setStyleSheet("border-image: url(images/bell.png); background-color: white;")
-        self.bell_button.setIconSize(QSize(100, 100))
         self.bell_button.setEnabled(False)
 
         # Create draw card button
