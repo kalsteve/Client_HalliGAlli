@@ -7,7 +7,7 @@ from DataConverter import DataConverter
 buffer_size = 1024
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('kiwiwip.duc', 4848))
+client_socket.connect(('kiwiwip.duckdns.org', 4848))
 print("Connected to server")
 
 data = DataConverter(client_socket.recv(buffer_size, socket.MSG_WAITALL))

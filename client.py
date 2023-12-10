@@ -73,7 +73,6 @@ class HarigariClient(QMainWindow):
         self.setFixedSize(600, 800)
 
     def initGameScreen(self):
-        thread = threading.Thread(target=self.in_game_receive_data, args=(self.data,))
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -142,6 +141,12 @@ class HarigariClient(QMainWindow):
 
         # Add draw card button
         layout.addWidget(self.bell_button, 6, 2, 1, 2)  # Row 6, Column 2, Span 1 row, 2 columns
+
+        # 스타트 쓰레드가 끝나면 인게임 스레드 실행
+        in_game_thread = QThread()
+        in_game_thread.run = self.in_game_communicate
+        self.starting_thread.finished.connect(in_game_thread.start)
+
 
         self.setWindowTitle('Halli Galli')
         self.setFixedSize(600, 800)  # Set fixed size for the window
@@ -232,6 +237,10 @@ class HarigariClient(QMainWindow):
 
     # 게임 화면을 보여줌
     def showGameScreen(self):
+        self.starting_thread = QThread()
+        self.starting_thread.run = self.handleStart
+        self.starting_thread.start()
+
         self.initGameScreen()
         self.show()
 
@@ -239,23 +248,56 @@ class HarigariClient(QMainWindow):
     def showReadyScreen(self):
         self.ready_button.setStyleSheet("color: red;")
 
-        self.clientSocket.sendall(self.data.send("PLAYER_READY"))
-        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
-
         # Create a confirmation dialog
         dialog = ReadyConfirmationDialog(self)
+        dialog.playerReadySignal.connect(self.handlePlayerReady)
         result = dialog.exec_()
 
-        self.data.set_action(dialog.playerReadySignal)
-        # self.clientSocket.sendall(self.data.send("PLAYER_START"))
-        self.clientSocket.sendall(bytes(self.data))
-
-        if result == QDialog.Accepted:
-            # 게임 시작 버튼 활성화
+        if result == QDialog.Rejected:
+            # 레디버튼 비활성화, 게임시작버튼 활성화
+            self.ready_button.setEnabled(False)
             self.game_start_button.setEnabled(True)
-        else:
-            # 레디 버튼 색상 원래대로
-            self.ready_button.setStyleSheet("color: original;")
+
+        elif result == QDialog.Accepted:
+            # 레디버튼 비활성화
+            self.ready_button.setEnabled(False)
+
+            wait_dialog = WaitingDialog(self)
+            waitThread = QThread()
+            waitThread.run = self.handlePlayerWaiting
+            waitThread.start()
+            wait_dialog.exec_()
+
+            # 게임시작버튼 활성화
+            self.game_start_button.setEnabled(True)
+
+    def handlePlayerReady(self, action):
+        # 'PLAYER_NOT_WANT' 액션 처리
+        self.data.set_action(action)
+        self.clientSocket.sendall(bytes(self.data))
+        print("set action: ", self.data.get_action())
+        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        print("Received action from server:", self.data)
+
+    def handlePlayerWaiting(self):
+        wait_qthread = QThread()
+        wait_qthread.run = lambda: self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        wait_qthread.start()
+
+        while True:
+            if wait_qthread.isFinished():
+                if self.data.get_action() == self.data.player_action["PLAYER_GAMING"]:
+                    print("Received action from server:", self.data)
+                    print("게임이 시작됨")
+                    break
+            QApplication.processEvents()  # 이벤트 루프 강제 처리
+
+    def handleStart(self):
+        self.clientSocket.sendall(bytes(self.data.send("PLAYER_START")))
+        print("send data from server: ", bytes(self.data))
+        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
+        print("Received action from server:", self.data)
+
 
     # 게임 화면을 닫으면 소켓도 닫힘
     def closeEvent(self, event):
@@ -272,11 +314,12 @@ class ReadyConfirmationDialog(QDialog):
         self.setWindowTitle('Ready Confirmation')
         self.setMinimumWidth(300)
 
-        # 버튼을
+        # 버튼 설정
         self.button_box = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No, self)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+        # 레이아웃 설정
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(QLabel('다른 플레이어를 기다릴까요?'))
         self.layout.addWidget(self.button_box)
@@ -286,22 +329,18 @@ class ReadyConfirmationDialog(QDialog):
         super(ReadyConfirmationDialog, self).accept()
         action = DataConverter.player_action.get("PLAYER_READY")
         self.playerReadySignal.emit(action)
-        wait = WaitingDialog(self)
-        wait.show()
 
-        while True:
-            if action == DataConverter.player_action.get("PLAYER_GAMING"):
-                wait.close()
-                break
 
     # 다른 플레이어를 기다리지 않음
     def reject(self):
         super(ReadyConfirmationDialog, self).reject()
-
         action = DataConverter.player_action.get("PLAYER_NOT_WANT")
         self.playerReadySignal.emit(action)
 
+
+
 class WaitingDialog(QDialog):
+    playerWaitingSignal = pyqtSignal(int)
     def __init__(self, parent=None):
         super(WaitingDialog, self).__init__(parent)
         self.setWindowTitle("대기 중")
