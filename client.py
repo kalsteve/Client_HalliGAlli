@@ -239,11 +239,19 @@ class HarigariClient(QMainWindow):
             # 레디버튼 비활성화
             self.ready_button.setEnabled(False)
 
-            wait_dialog = WaitingDialog(self)
-            waitThread = QThread()
-            waitThread.run = self.handlePlayerWaiting
-            waitThread.start()
-            wait_dialog.exec_()
+            # 대기중 다이얼로그 생성
+            waiting_dialog = WaitingDialog(self)
+            waiting_dialog.show()
+
+            # 대기중 쓰레드 생성
+            wait_qthread = waitThread(parent=self, client_socket=self.clientSocket, data=self.data)
+            wait_qthread.start()
+
+            # 대기중 쓰레드 종료시 대기중 다이얼로그 종료
+            if wait_qthread.isFinished():
+                waiting_dialog.close()
+                self.game_start_button.setEnabled(True)
+                print("게임이 시작됨")
 
             # 게임시작버튼 활성화
             self.game_start_button.setEnabled(True)
@@ -268,18 +276,6 @@ class HarigariClient(QMainWindow):
 
         # 화면 상단에 현재 플레이어 누군지 표시
         self.turn_label.setText(f"Current Turn: {current_player}")
-
-
-
-    def handlePlayerWaiting(self):
-        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
-        while True:
-            if wait_qthread.isFinished():
-                if self.data.get_action() == self.data.player_action["PLAYER_GAMING"]:
-                    print("Received action from server:", self.data)
-                    print("게임이 시작됨")
-                    break
-            QApplication.processEvents()  # 이벤트 루프 강제 처리
 
     # 게임 화면을 닫으면 소켓도 닫힘
     def closeEvent(self, event):
@@ -400,6 +396,15 @@ class InGameThread(QThread):
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
             QThread.sleep(1)
+
+class waitThread(QThread):
+    def __init__(self, parent=None, client_socket=None, data=None):
+        super(waitThread, self).__init__(parent)
+        self.clientSocket: socket.socket = client_socket
+        self.data: DataConverter = DataConverter(data)
+
+    def run(self):
+        self.data.recv(self.clientSocket.recv(1024, socket.MSG_WAITALL))
 
 if __name__ == '__main__':
     app = QApplication([])
