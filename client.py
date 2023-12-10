@@ -96,18 +96,22 @@ class HarigariClient(QMainWindow):
         for label in back_image_labels:
             label.setPixmap(QPixmap('images/back.png'))
 
+        # Create labels for images
+        bell_image_label = QLabel(self)
+        bell_image_label.setPixmap(QPixmap('images/bell.png'))
+        bell_image_label.setAlignment(Qt.AlignCenter)  # Center the bell image
+
         # Create bell button
         self.bell_button = QPushButton('Ring Bell', self)
         self.bell_button.clicked.connect(self.handleBellPress)
-        # 벨의 이미지를 버튼으로 사용하고 크기는 이미지에 맞게 변경
-        self.bell_button.setStyleSheet("border-image: url(images/bell.png); background-color: white;")
+        self.bell_button.setStyleSheet("background-color: white;")
         self.bell_button.setEnabled(False)
 
         # Create draw card button
         bell_icon = QPixmap('images/bell.png')
         self.draw_card_button = QPushButton('Draw Card', self)
         self.draw_card_button.clicked.connect(self.handleDrawCard)
-        self.draw_card_button.setStyleSheet("background-color: white;")
+        self.bell_button.setStyleSheet("background-color: white;")
         self.draw_card_button.setEnabled(False)
 
         # Create label for current player's turn
@@ -118,10 +122,10 @@ class HarigariClient(QMainWindow):
         # Create layout
         layout = QGridLayout(self.central_widget)
         layout.addWidget(self.turn_label, 0, 0, 1, 4)  # Row 0, Column 0, Span 1 row, 4 columns
-        # layout.addWidget(bell_image_label, 1, 0, 1, 4)  # Row 1, Column 0, Span 1 row, 4 columns
+        layout.addWidget(bell_image_label, 1, 0, 1, 4)  # Row 1, Column 0, Span 1 row, 4 columns
         layout.addWidget(separator_lines[0], 2, 0, 1, 4)  # Row 2, Column 0, Span 1 row, 4 columns
         layout.addWidget(self.draw_card_button, 3, 0, 1, 2)  # Row 3, Column 0, Span 1 row, 2 columns
-        layout.addWidget(self.bell_button, 1, 0, 1, 4)  # Row 3, Column 2, Span 1 row, 2 columns
+        layout.addWidget(self.bell_button, 1, 0, 1, 3)  # Row 3, Column 2, Span 1 row, 2 columns
 
         # Add labels for each player with some spacing
         player_labels = [QLabel(f'   Player {i + 1}') for i in range(4)]
