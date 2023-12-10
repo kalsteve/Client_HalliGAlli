@@ -46,6 +46,13 @@ class DataConverter:
             self.stored_bytes = data
             self.__convert_to_dict(data)
             self.__store_first_data()
+        elif isinstance(data, DataConverter):
+            self.my_id = data.my_id
+            self.my_action = data.my_action
+            self.player_turn = data.player_turn
+            self.player_list = data.player_list
+            self.card = data.card
+
 
     # 데이터 수신
     def recv(self, data: bytes):
