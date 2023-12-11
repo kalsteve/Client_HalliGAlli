@@ -24,6 +24,8 @@ class HarigariClient(QMainWindow):
         self.initMainMenu()
         # 통신 설정
         self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 소캣 연결 종료 방지
+        self.clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, 1)
         self.clientSocket.connect(('kiwiwip.duckdns.org', 4848))
 
         self.data = self.first_receive(self.clientSocket)
@@ -234,6 +236,7 @@ class HarigariClient(QMainWindow):
         # Create a confirmation dialog
         dialog = ReadyConfirmationDialog(self)
         dialog.playerReadySignal.connect(self.handlePlayerReady)
+        dialog.PlayerStartSignal.connect(self.handleStartGame)
         result = dialog.exec_()
 
         if result == QDialog.Rejected:
@@ -298,6 +301,7 @@ class HarigariClient(QMainWindow):
 # 레디 버튼을 누르면 뜨는 창
 class ReadyConfirmationDialog(QDialog):
     playerReadySignal = pyqtSignal(int)
+    PlayerStartSignal = pyqtSignal()
 
     def __init__(self, parent=None):
         super(ReadyConfirmationDialog, self).__init__(parent)
@@ -363,8 +367,6 @@ class InGameThread(QThread):
         self.clicked_turn_end_button = clicked_turn_end_button
 
     def run(self):
-
-
         while True:
 
             if self.clicked_bell_button:
@@ -412,8 +414,11 @@ class waitThread(QThread):
         self.data: DataConverter = DataConverter(data)
 
     def run(self):
-        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
-        print("Received action from server:", self.data)
+        while True:
+            self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
+            print("Received action from server:", self.data)
+            if self.data.my_action == self.data.player_action["PLAYER_START"]:
+                break
 
 if __name__ == '__main__':
     app = QApplication([])
