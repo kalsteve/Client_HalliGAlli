@@ -414,7 +414,6 @@ class InGameThread(QThread):
             if self.data.my_action == self.data.player_action["PLAYER_GAMING"]:
                 self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                 print("Received action from server:", self.data)
-                self.data.re
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
 
