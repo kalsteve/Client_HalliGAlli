@@ -24,10 +24,6 @@ class HarigariClient(QMainWindow):
         self.initMainMenu()
         # 통신 설정
         self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # 소캣 연결 종료 방지
-        self.clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-
-        self.clientSocket.settimeout(100)
 
         self.clientSocket.connect(('kiwiwip.duckdns.org', 4848))
 
