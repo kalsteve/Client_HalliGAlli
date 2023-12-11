@@ -170,7 +170,7 @@ class HarigariClient(QMainWindow):
 
     # 카드를 뽑았을때
     def handleDrawCard(self):
-        self.bell_button.setEnabled(False)
+        self.draw_card_button.setEnabled(False)
         self.turn_end_button.setEnabled(True)
         self.game_thread.update_event(clicked_draw_button=True)
         print("Draw card pressed!")
@@ -212,7 +212,6 @@ class HarigariClient(QMainWindow):
         self.game_thread.cardUpdateSignal.connect(self.receive_data)
         self.game_thread.myTurnSignal.connect(self.handleMyTurn)
         self.game_thread.notMyTurnSignal.connect(self.handleNotMyTurn)
-        self.game_thread.TurnEndSignal.connect(self.handleTurnEnd)
         self.game_thread.offBellButtonSignal.connect(self.handleOffButton)
         self.game_thread.start()
 
@@ -246,14 +245,18 @@ class HarigariClient(QMainWindow):
             wait_qthread = waitThread(parent=self, client_socket=self.clientSocket, data=self.data)
             wait_qthread.start()
 
-            # 대기중 쓰레드 종료시 대기중 다이얼로그 종료
-            if wait_qthread.isFinished():
-                waiting_dialog.close()
-                self.game_start_button.setEnabled(True)
-                print("게임이 시작됨")
+            while True:
+                # 대기중 쓰레드 종료시 대기중 다이얼로그 종료
+                if wait_qthread.isFinished():
+                    waiting_dialog.close()
+                    self.game_start_button.setEnabled(True)
+                    print("게임이 시작됨")
+                    break
 
-            # 게임시작버튼 활성화
-            self.game_start_button.setEnabled(True)
+                QApplication.processEvents()
+
+            # 게임 화면 실행
+            self.showGameScreen()
 
     def receive_data(self, data: DataConverter):
         current_player = data.get_turn()
@@ -312,7 +315,6 @@ class ReadyConfirmationDialog(QDialog):
     def reject(self):
         super(ReadyConfirmationDialog, self).reject()
         action = DataConverter.player_action.get("PLAYER_NOT_WANT")
-        self.playerReadySignal.emit(action)
 
 
 class WaitingDialog(QDialog):
@@ -333,8 +335,8 @@ class WaitingDialog(QDialog):
 class InGameThread(QThread):
     cardUpdateSignal = pyqtSignal(DataConverter)
     myTurnSignal = pyqtSignal()
-    notMyTurnSignal = pyqtSignal()
     TurnEndSignal = pyqtSignal()
+    notMyTurnSignal = pyqtSignal()
     offBellButtonSignal = pyqtSignal()
 
     def __init__(self, parent=None, client_socket=None, data=None):
