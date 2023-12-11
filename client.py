@@ -406,8 +406,7 @@ class InGameThread(QThread):
                     self.clicked_turn_end_button = False
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_TURN_END")))
                     print("send data from server: ", bytes(self.data))
-                    data1 = self.clientSocket.recv(buffer_size, socket.MSG_WAITALL)
-                    self.data.recv(data1)
+                    self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                     print("Received action from server:", str(self.data))
 
 
@@ -417,6 +416,9 @@ class InGameThread(QThread):
                 print("Received action from server:", self.data)
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
+                self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
+                print("Received2 action from server:", self.data)
+
 
             QThread.sleep(1)
 
