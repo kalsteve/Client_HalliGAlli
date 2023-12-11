@@ -202,6 +202,7 @@ class HarigariClient(QMainWindow):
 
     def handleTurnEnd(self):
         self.turn_end_button.setEnabled(False)
+        self.game_thread.update_event(clicked_turn_end_button=True)
         print("Turn end pressed!")
 
     def handleOffButton(self):
@@ -400,8 +401,6 @@ class InGameThread(QThread):
                     self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                     print("Received action from server:", str(self.data))
                     self.cardUpdateSignal.emit(self.data)
-
-
 
                 if self.clicked_turn_end_button:
                     self.clicked_turn_end_button = False
