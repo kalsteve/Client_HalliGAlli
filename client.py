@@ -279,6 +279,8 @@ class HarigariClient(QMainWindow):
         # 카드 정보가 있으면
         for player, card_label in zip(player_list, self.card_labels):
             card_type_key = DataConverter.fruits[player["card"]["type"]]
+            if card_type_key == 0:
+                continue
             card_type = {value: key for key, value in DataConverter.con_fruits.items()}[card_type_key].lower()
             card_volume = player["card"]["volume"] + 1
             card_image_path = f'images/{card_type}{card_volume}.jpg'
@@ -361,6 +363,7 @@ class InGameThread(QThread):
         self.clicked_draw_button: bool = False
         self.clicked_bell_button: bool = False
         self.clicked_turn_end_button: bool = False
+        self.turn_me: bool = True
 
     def update_event(self, clicked_draw_button=False, clicked_bell_button=False, clicked_turn_end_button=False):
         self.clicked_draw_button = clicked_draw_button
@@ -384,23 +387,30 @@ class InGameThread(QThread):
 
             # 플레이어의 턴인 상태면
             if self.data.my_id == self.data.player_turn:
-                self.myTurnSignal.emit()
+
+                if self.turn_me:
+                    self.myTurnSignal.emit()
+                    self.turn_me = False
+
                 # 데이터의 업데이트를 대기
                 if self.clicked_draw_button:
+                    self.clicked_draw_button = False
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_DRAW")))
                     print("send data from server: ", bytes(self.data))
                     self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                     print("Received action from server:", str(self.data))
                     self.cardUpdateSignal.emit(self.data)
-                    self.clicked_draw_button = False
+
+
 
                 if self.clicked_turn_end_button:
+                    self.clicked_turn_end_button = False
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_TURN_END")))
                     print("send data from server: ", bytes(self.data))
                     data1 = self.clientSocket.recv(buffer_size, socket.MSG_WAITALL)
                     self.data.recv(data1)
                     print("Received action from server:", str(self.data))
-                    self.clicked_turn_end_button = False
+
 
             # 플레이어가 인게임 상태면
             if self.data.my_action == self.data.player_action["PLAYER_GAMING"]:
@@ -408,7 +418,10 @@ class InGameThread(QThread):
                 print("Received action from server:", self.data)
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
+
             QThread.sleep(1)
+
+            self.turn_me = True
 
 class waitThread(QThread):
     def __init__(self, parent=None, client_socket=None, data=None):

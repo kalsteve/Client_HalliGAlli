@@ -5,16 +5,17 @@ import json
 class DataConverter:
     # 과일 종류 딕셔너리
     fruits: dict[str, int] = {
-        "STRAWBERRY": 0,
-        "BANANA": 1,
-        "LIME": 2,
-        "PLUM": 3
+        "CARD_NULL": 0,
+        "STRAWBERRY": 1,
+        "BANANA": 2,
+        "LIME": 3,
+        "PLUM": 4
     }
     con_fruits: dict[int, str] = {
-        "STRAWBERRY": 0,
-        "BANANA": 1,
-        "ABOCADO": 2,
-        "ORANGE": 3
+        "STRAWBERRY": 1,
+        "BANANA": 2,
+        "ABOCADO": 3,
+        "ORANGE": 4
     }
     # 플레이어 액션 딕셔너리
     player_action: dict[str, int] = {
