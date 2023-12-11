@@ -370,6 +370,7 @@ class InGameThread(QThread):
     def run(self):
         self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
         print("game Received action from server:", self.data)
+
         while True:
             if self.clicked_bell_button:
                 self.clientSocket.sendall(bytes(self.data.send("PLAYER_BELL")))
@@ -382,7 +383,7 @@ class InGameThread(QThread):
 
 
             # 플레이어의 턴인 상태면
-            if self.data.my_action == self.data.player_action["PLAYER_TURN"]:
+            if self.data.my_id == self.data.player_turn:
                 self.myTurnSignal.emit()
                 # 데이터의 업데이트를 대기
                 if self.clicked_draw_button:
