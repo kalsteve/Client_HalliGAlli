@@ -416,8 +416,6 @@ class InGameThread(QThread):
                 print("Received action from server:", self.data)
                 self.cardUpdateSignal.emit(self.data)
                 self.notMyTurnSignal.emit()
-                self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
-                print("Received2 action from server:", self.data)
 
 
             QThread.sleep(1)
