@@ -55,7 +55,7 @@ class HarigariClient(QMainWindow):
 
         # 게임 시작 버튼
         self.game_start_button = QPushButton('Game Start', self)
-        self.game_start_button.clicked.connect(self.showGameScreen)
+        self.game_start_button.clicked.connect(self.handleStartGame)
         self.game_start_button.setEnabled(False)
 
         # 레디 버튼
@@ -206,6 +206,14 @@ class HarigariClient(QMainWindow):
     def handleOffButton(self):
         self.turn_end_button.setEnabled(False)
 
+    def handleStartGame(self):
+        self.clientSocket.sendall(self.data.send("PLAYER_START"))
+        print("init send data from server: ", bytes(self.data))
+        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
+        print("init Received action from server:", self.data)
+
+        self.showGameScreen()
+
     # 게임 화면을 보여줌
     def showGameScreen(self):
         self.game_thread = InGameThread(parent=self, client_socket=self.clientSocket, data=self.data)
@@ -232,6 +240,7 @@ class HarigariClient(QMainWindow):
             # 레디버튼 비활성화, 게임시작버튼 활성화
             self.ready_button.setEnabled(False)
             self.game_start_button.setEnabled(True)
+
 
         elif result == QDialog.Accepted:
             # 레디버튼 비활성화
@@ -315,6 +324,7 @@ class ReadyConfirmationDialog(QDialog):
     def reject(self):
         super(ReadyConfirmationDialog, self).reject()
         action = DataConverter.player_action.get("PLAYER_NOT_WANT")
+        self.playerReadySignal.emit(action)
 
 
 class WaitingDialog(QDialog):
@@ -353,10 +363,7 @@ class InGameThread(QThread):
         self.clicked_turn_end_button = clicked_turn_end_button
 
     def run(self):
-        self.clientSocket.sendall(self.data.send("PLAYER_START"))
-        print("init send data from server: ", bytes(self.data))
-        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
-        print("init Received action from server:", self.data)
+
 
         while True:
 
@@ -406,6 +413,7 @@ class waitThread(QThread):
 
     def run(self):
         self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
+        print("Received action from server:", self.data)
 
 if __name__ == '__main__':
     app = QApplication([])
