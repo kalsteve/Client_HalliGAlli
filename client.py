@@ -416,7 +416,7 @@ class waitThread(QThread):
         while True:
             self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
             print("Received action from server:", self.data)
-            if self.data.my_action == self.data.player_action["PLAYER_READY"]:
+            if self.data.my_action != self.data.player_action["PLAYER_READY"]:
                 break
 
 if __name__ == '__main__':
