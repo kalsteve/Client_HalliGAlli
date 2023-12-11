@@ -266,6 +266,8 @@ class HarigariClient(QMainWindow):
 
                 QApplication.processEvents()
 
+
+
             # 게임 화면 실행
             self.showGameScreen()
 
@@ -366,11 +368,11 @@ class InGameThread(QThread):
         self.clicked_turn_end_button = clicked_turn_end_button
 
     def run(self):
+        self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
+        print("game Received action from server:", self.data)
         while True:
-
             if self.clicked_bell_button:
-                self.data.set_action("PLAYER_BELL")
-                self.clientSocket.sendall(bytes(self.data))
+                self.clientSocket.sendall(bytes(self.data.send("PLAYER_BELL")))
                 print("send data from server: ", bytes(self.data))
                 self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                 self.cardUpdateSignal.emit(self.data)
