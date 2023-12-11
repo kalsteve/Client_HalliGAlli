@@ -15,7 +15,7 @@ from DataConverter import DataConverter
     2. 서버에서 보내는 데이터를 받을 때 코드 수정해야함. -> receive_data 함수
     3. 서버에 데이터 보낼때 보내는 형식 아마 수정해야할거임 -> send 함수 찾아서.
     4. '''
-buffer_size = 128
+buffer_size = 512
 
 class HarigariClient(QMainWindow):
     def __init__(self):
@@ -390,15 +390,16 @@ class InGameThread(QThread):
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_DRAW")))
                     print("send data from server: ", bytes(self.data))
                     self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
-                    print("Received action from server:", self.data)
+                    print("Received action from server:", str(self.data))
                     self.cardUpdateSignal.emit(self.data)
                     self.clicked_draw_button = False
 
                 if self.clicked_turn_end_button:
                     self.clientSocket.sendall(bytes(self.data.send("PLAYER_TURN_END")))
                     print("send data from server: ", bytes(self.data))
-                    self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
-                    print("Received action from server:", self.data)
+                    data1 = self.clientSocket.recv(buffer_size, socket.MSG_WAITALL)
+                    self.data.recv(data1)
+                    print("Received action from server:", str(self.data))
                     self.clicked_turn_end_button = False
 
             # 플레이어가 인게임 상태면

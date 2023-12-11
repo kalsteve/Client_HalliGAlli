@@ -90,7 +90,7 @@ class DataConverter:
 
     # 보낼 데이터를 bytes로 변경, c언어에서는 1024바이트로 고정 되어있음으로 1024바이트로 변경
     def __convert_to_bytes(self, data: str):
-        self.stored_bytes = int.from_bytes(data.encode('utf-8'), 'little').to_bytes(128, 'little')
+        self.stored_bytes = int.from_bytes(data.encode('utf-8'), 'little').to_bytes(512, 'little')
 
     # 처음 데이터를 받았을 때 저장
     def __store_first_data(self):

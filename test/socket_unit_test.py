@@ -37,7 +37,8 @@ class MyTestCase(unittest.TestCase):
     def test_recv(self):
         data = DataConverter(bytes(int.from_bytes(self.receive_action_test(), 'little').to_bytes(1024, 'little')))
         data.recv(bytes(int.from_bytes(self.receive_data_test(), 'little').to_bytes(1024, 'little')))
-        self.assertEqual(data.player_turn, 2)
+        # self.assertEqual(data.player_turn, 2)
+        self.assertEqual(str(data), str(self.dum2))
         self.assertEqual(data.get_player_by_id(1), {'player_id': 1, 'card': {'type': 'PLUM', 'volume': 5}})
         self.assertEqual(data.get_card_by_id(1), data.get_card_my())
 
@@ -46,6 +47,7 @@ class MyTestCase(unittest.TestCase):
         data = DataConverter(bytes(int.from_bytes(self.receive_action_test(), 'little').to_bytes(1024, 'little')))
         data.send({value: key for key, value in DataConverter.player_action.items()}[12])
         self.assertEqual(data.my_action, data.player_action["PLAYER_NOT_WANT"])
+
 
     def receive_action_test(self):
         return json.dumps(self.dum1).encode('utf-8')
