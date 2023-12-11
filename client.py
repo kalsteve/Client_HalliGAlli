@@ -411,7 +411,7 @@ class InGameThread(QThread):
 
 
             # 플레이어가 인게임 상태면
-            if self.data.my_action == self.data.player_action["PLAYER_GAMING"]:
+            if self.data.my_id == self.data.player_turn:
                 self.data.recv(self.clientSocket.recv(buffer_size, socket.MSG_WAITALL))
                 print("Received action from server:", self.data)
                 self.cardUpdateSignal.emit(self.data)
